@@ -12,6 +12,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// print stdout and stderr
 func printStd(o, e *bytes.Buffer) {
 	if e.Len() > 0 {
 		fmt.Println(e.String())
@@ -25,6 +26,7 @@ func printStd(o, e *bytes.Buffer) {
 	e.Reset()
 }
 
+// create the go module
 func createModule(ctx *cli.Context, dir string) error {
 	var name string       // module name
 	var o, e bytes.Buffer // stdout, stderr buffers
@@ -70,6 +72,54 @@ func createModule(ctx *cli.Context, dir string) error {
 		return err
 	}
 
+	// initialize git repository
+	git := exec.Command("git", "init")
+	git.Dir = dir
+	git.Stdout = &o
+	git.Stderr = &e
+	err = git.Run()
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return err
+	}
+	printStd(&o, &e)
+
+	//  create .gitignore file from .gitignore template in home
+	gitignore := exec.Command("cp", os.Getenv("HOME")+"/.gitignore", ".gitignore")
+	gitignore.Dir = dir
+	gitignore.Stdout = &o
+	gitignore.Stderr = &e
+	err = gitignore.Run()
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return err
+	}
+	printStd(&o, &e)
+
+	// add all files to git
+	add := exec.Command("git", "add", ".")
+	add.Dir = dir
+	add.Stdout = &o
+	add.Stderr = &e
+	err = add.Run()
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return err
+	}
+	printStd(&o, &e)
+
+	// commit all files
+	commit := exec.Command("git", "commit", "-m", "initial commit")
+	commit.Dir = dir
+	commit.Stdout = &o
+	commit.Stderr = &e
+	err = commit.Run()
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return err
+	}
+	printStd(&o, &e)
+
 	// open vscode
 	vsc := exec.Command("code", ".")
 	vsc.Dir = dir
@@ -85,6 +135,7 @@ func createModule(ctx *cli.Context, dir string) error {
 	return nil
 }
 
+// display choices for valid directories
 func choices(ctx *cli.Context, opts []string) error {
 	fmt.Println("Choose destination:")
 	for i, opt := range opts {
@@ -101,10 +152,47 @@ func choices(ctx *cli.Context, opts []string) error {
 	return createModule(ctx, dir)
 }
 
+// get the go path by executing go env GOPATH
+func getGoPath() (string, error) {
+	var o, e bytes.Buffer // stdout, stderr buffers
+
+	// get go path
+	gopath := exec.Command("go", "env", "GOPATH")
+	gopath.Stdout = &o
+	gopath.Stderr = &e
+	//  reset buffers after running command
+	defer func() {
+		o.Reset()
+		e.Reset()
+	}()
+
+	err := gopath.Run() // run command
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return "", err
+	}
+
+	gpth := o.String() // get go path
+	// remove newline from go path
+	gpth = gpth[:len(gpth)-1]
+
+	if gpth == "" { // if go path is empty
+		gpth = "~/go" // default to $HOME/go
+	}
+
+	return gpth, nil
+}
+
+// verify if current directory is a valid directory to create a go module in
 func verifyDir(ctx *cli.Context) error {
-	//  get all valid folders to create a go module
-	wdp := "/Users/tashi/go/src/*/[0-9a-zA-Z]*" // pattern to match
-	wdm, err := filepath.Glob(wdp)              // matches
+	gopath, err := getGoPath() // get go path
+
+	if err != nil {
+		return err
+	}
+	//  get all valid directories to create a go module in
+	wdp := fmt.Sprintf("%s/src/*/[0-9a-zA-Z]*", gopath) // pattern to match
+	wdm, err := filepath.Glob(wdp)                      // matches
 	if err != nil {
 		log.Printf("%v", err)
 		return err
