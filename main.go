@@ -96,6 +96,18 @@ func createModule(ctx *cli.Context, dir string) error {
 	}
 	printStd(&o, &e)
 
+	// create .air.toml file from .air.toml template in home
+	air := exec.Command("cp", os.Getenv("HOME")+"/.air.toml", ".air.toml")
+	air.Dir = dir
+	air.Stdout = &o
+	air.Stderr = &e
+	err = air.Run()
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return err
+	}
+	printStd(&o, &e)
+
 	// add all files to git
 	add := exec.Command("git", "add", ".")
 	add.Dir = dir
