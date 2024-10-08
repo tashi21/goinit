@@ -1,6 +1,6 @@
 module github.com/tashi21/goinit
 
-go 1.19
+go 1.23
 
 require (
 	github.com/urfave/cli/v2 v2.16.3

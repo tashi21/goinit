@@ -66,7 +66,7 @@ func createModule(ctx *cli.Context, dir string) error {
 
 	// initialize main.go
 	data := []byte("package main\n\nfunc main() {}\n")
-	err = os.WriteFile(dir+"/main.go", data, 0644)
+	err = os.WriteFile(filepath.Join(dir, "main.go"), data, 0644)
 	if err != nil {
 		log.Printf("%v", err)
 		return err
@@ -85,7 +85,7 @@ func createModule(ctx *cli.Context, dir string) error {
 	printStd(&o, &e)
 
 	//  create .gitignore file from .gitignore template in home
-	gitignore := exec.Command("cp", os.Getenv("HOME")+"/.gitignore", ".gitignore")
+	gitignore := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "go.gitignore"), ".gitignore")
 	gitignore.Dir = dir
 	gitignore.Stdout = &o
 	gitignore.Stderr = &e
@@ -97,7 +97,7 @@ func createModule(ctx *cli.Context, dir string) error {
 	printStd(&o, &e)
 
 	// create .air.toml file from .air.toml template in home
-	air := exec.Command("cp", os.Getenv("HOME")+"/.air.toml", ".air.toml")
+	air := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "default.air.toml"), ".air.toml")
 	air.Dir = dir
 	air.Stdout = &o
 	air.Stderr = &e
@@ -121,7 +121,7 @@ func createModule(ctx *cli.Context, dir string) error {
 	printStd(&o, &e)
 
 	// commit all files
-	commit := exec.Command("git", "commit", "-m", "initial commit")
+	commit := exec.Command("git", "commit", "--gpg-sign", "--message", "initial commit")
 	commit.Dir = dir
 	commit.Stdout = &o
 	commit.Stderr = &e
