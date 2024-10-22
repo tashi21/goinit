@@ -29,17 +29,23 @@ func printStd(o, e *bytes.Buffer) {
 // create the go module
 func createModule(ctx *cli.Context, dir string) error {
 	var name string       // module name
+	var editor string     // editor to use
 	var o, e bytes.Buffer // stdout, stderr buffers
 
 	// get name of the module, else default to "project"
-	if ctx.NArg() > 0 {
+	if ctx.NArg() == 2 {
 		name = ctx.Args().Get(0)
+		editor = ctx.Args().Get(1)
+	} else if ctx.NArg() == 1 {
+		name = ctx.Args().Get(0)
+		editor = "zed"
 	} else {
 		name = "project"
+		editor = "zed"
 	}
 
 	// create directory for go module
-	mkdir := exec.Command("mkdir", name)
+	mkdir := exec.Command("mkdir", name, filepath.Join(name, "db"), filepath.Join(name, "db", "generated_code"), filepath.Join(name, "db", "queries"), filepath.Join(name, "db", "migrations"))
 	mkdir.Dir = dir
 	mkdir.Stdout = &o
 	mkdir.Stderr = &e
@@ -84,8 +90,8 @@ func createModule(ctx *cli.Context, dir string) error {
 	}
 	printStd(&o, &e)
 
-	//  create .gitignore file from .gitignore template in home
-	gitignore := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "go.gitignore"), ".gitignore")
+	//  create .gitignore file from default.go.gitignore template in home
+	gitignore := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "default.go.gitignore"), ".gitignore")
 	gitignore.Dir = dir
 	gitignore.Stdout = &o
 	gitignore.Stderr = &e
@@ -96,12 +102,23 @@ func createModule(ctx *cli.Context, dir string) error {
 	}
 	printStd(&o, &e)
 
-	// create .air.toml file from .air.toml template in home
+	// create .air.toml file from default.air.toml template in home
 	air := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "default.air.toml"), ".air.toml")
 	air.Dir = dir
 	air.Stdout = &o
 	air.Stderr = &e
 	err = air.Run()
+	if err != nil {
+		log.Printf("%v: %v", err, e.String())
+		return err
+	}
+	printStd(&o, &e)
+	// create sqlc.yaml file from default.sqlc.yaml template in home
+	sqlc := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "default.sqlc.yaml"), "sqlc.yaml")
+	sqlc.Dir = dir
+	sqlc.Stdout = &o
+	sqlc.Stderr = &e
+	err = sqlc.Run()
 	if err != nil {
 		log.Printf("%v: %v", err, e.String())
 		return err
@@ -132,8 +149,8 @@ func createModule(ctx *cli.Context, dir string) error {
 	}
 	printStd(&o, &e)
 
-	// open vscode
-	vsc := exec.Command("code", ".")
+	// open editor
+	vsc := exec.Command(editor, ".")
 	vsc.Dir = dir
 	vsc.Stdout = &o
 	vsc.Stderr = &e
