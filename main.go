@@ -45,7 +45,7 @@ func createModule(ctx *cli.Context, dir string) error {
 	}
 
 	// create directory for go module
-	mkdir := exec.Command("mkdir", name, filepath.Join(name, "db"), filepath.Join(name, "db", "generated_code"), filepath.Join(name, "db", "queries"), filepath.Join(name, "db", "migrations"))
+	mkdir := exec.Command("mkdir", name, filepath.Join(name, "db"), filepath.Join(name, "db", "migrations"))
 	mkdir.Dir = dir
 	mkdir.Stdout = &o
 	mkdir.Stderr = &e
