@@ -91,7 +91,7 @@ func createModule(ctx *cli.Context, dir string) error {
 	printStd(&o, &e)
 
 	//  create .gitignore file from default.go.gitignore template in home
-	gitignore := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "default.go.gitignore"), ".gitignore")
+	gitignore := exec.Command("cp", filepath.Join(os.Getenv("HOME"), ".gitignore.go"), ".gitignore")
 	gitignore.Dir = dir
 	gitignore.Stdout = &o
 	gitignore.Stderr = &e
@@ -108,17 +108,6 @@ func createModule(ctx *cli.Context, dir string) error {
 	air.Stdout = &o
 	air.Stderr = &e
 	err = air.Run()
-	if err != nil {
-		log.Printf("%v: %v", err, e.String())
-		return err
-	}
-	printStd(&o, &e)
-	// create sqlc.yaml file from default.sqlc.yaml template in home
-	sqlc := exec.Command("cp", filepath.Join(os.Getenv("HOME"), "default.sqlc.yaml"), "sqlc.yaml")
-	sqlc.Dir = dir
-	sqlc.Stdout = &o
-	sqlc.Stderr = &e
-	err = sqlc.Run()
 	if err != nil {
 		log.Printf("%v: %v", err, e.String())
 		return err
